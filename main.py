@@ -17,13 +17,12 @@ Thread(target=run_web, daemon=True).start()
 
 # ==================== CẤU HÌNH BOT ====================
 intents = discord.Intents.default()
-intents.message_content = True # QUAN TRỌNG ĐỂ BOT ĐỌC LỆNH
+intents.message_content = True
 bot = commands.Bot(command_prefix="!", intents=intents)
 
 # VÒNG LẶP TỰ ĐỘNG CHẠY TÀI XỈU
-@tasks.loop(seconds=60) # Cứ 60 giây chạy 1 ván
+@tasks.loop(seconds=60)
 async def tx_loop():
-    # Tìm kênh có tên 'tài-xỉu' hoặc 'tai-xiu'
     channel = discord.utils.get(bot.get_all_channels(), name="tài-xỉu")
     if channel:
         d1, d2, d3 = random.randint(1, 6), random.randint(1, 6), random.randint(1, 6)
@@ -35,9 +34,8 @@ async def tx_loop():
 async def on_ready():
     print(f"Bot {bot.user.name} đã online!")
     if not tx_loop.is_running():
-        tx_loop.start() # Bắt đầu vòng lặp
+        tx_loop.start()
 
-# Lệnh kiểm tra thủ công (nếu cần)
 @bot.command()
 async def tx(ctx, choise: str):
     d1, d2, d3 = random.randint(1, 6), random.randint(1, 6), random.randint(1, 6)
@@ -46,6 +44,6 @@ async def tx(ctx, choise: str):
     await ctx.send(f"🎲 Kết quả: {d1}-{d2}-{d3} ({total}) -> {res.upper()}")
 
 # ==================== BẬT BOT ====================
-# ĐỪNG QUÊN THAY TOKEN MỚI VÀO ĐÂY
-TOKEN = "MTUzMTMzMzI0MTU4NjQ1MDQ4Mw.GH6om-.0SoocBsPayB-OMfJhnuXQeZkbZC1dmnhufTGWQ"
+TOKEN = "MTM0MTMzMzI0MTU4NjQ1MDQ4Mw.G4E08T.X2S9E74_3v3XtbX.7Y33XI_w0k20d9SC9uzK9YnouQDJ0uUFy0NAFg"
 bot.run(TOKEN)
+    
