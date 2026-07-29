@@ -2,107 +2,50 @@ import os
 import random
 import asyncio
 import discord
-from discord.ext import commands
+from discord.ext import commands, tasks
 from flask import Flask
 from threading import Thread
 
-# ==================== WEB SERVER CHỐNG TIMED OUT ====================
+# ==================== WEB SERVER GIỮ BOT 24/7 ====================
 app = Flask('')
-
 @app.route('/')
-def home():
-    return "Bot Discord đang chạy 24/7!"
-
+def home(): return "Bot Tài Xỉu đang chạy!"
 def run_web():
     port = int(os.environ.get("PORT", 8080))
     app.run(host='0.0.0.0', port=port)
+Thread(target=run_web, daemon=True).start()
 
-def keep_alive():
-    t = Thread(target=run_web)
-    t.daemon = True
-    t.start()
-
-keep_alive()
-
-# ==================== CẤU HÌNH BOT DISCORD ====================
+# ==================== CẤU HÌNH BOT ====================
 intents = discord.Intents.default()
-intents.message_content = True
-intents.members = True
-
+intents.message_content = True # QUAN TRỌNG ĐỂ BOT ĐỌC LỆNH
 bot = commands.Bot(command_prefix="!", intents=intents)
 
-user_balances = {}
-
-def get_bal(uid):
-    return user_balances.get(uid, 2000)
-
-def set_bal(uid, amount):
-    user_balances[uid] = max(0, get_bal(uid) + amount)
+# VÒNG LẶP TỰ ĐỘNG CHẠY TÀI XỈU
+@tasks.loop(seconds=60) # Cứ 60 giây chạy 1 ván
+async def tx_loop():
+    # Tìm kênh có tên 'tài-xỉu' hoặc 'tai-xiu'
+    channel = discord.utils.get(bot.get_all_channels(), name="tài-xỉu")
+    if channel:
+        d1, d2, d3 = random.randint(1, 6), random.randint(1, 6), random.randint(1, 6)
+        total = d1 + d2 + d3
+        ket_qua = "TÀI" if total >= 11 else "XỈU"
+        await channel.send(f"🎲 **TỰ ĐỘNG:** Kết quả ván này: **{d1}-{d2}-{d3}** ({total} - {ket_qua})")
 
 @bot.event
 async def on_ready():
-    print(f"=== BOT {bot.user.name} ĐÃ ONLINE ĐẦY ĐỦ TÍNH NĂNG! ===")
-    await bot.change_presence(activity=discord.Game(name="!helpbot | All-in-One"))
+    print(f"Bot {bot.user.name} đã online!")
+    if not tx_loop.is_running():
+        tx_loop.start() # Bắt đầu vòng lặp
 
-# ==================== KINH TẾ & CASINO ====================
-
-@bot.command(name="sodu", aliases=["vi", "bal"])
-async def check_balance(ctx, member: discord.Member = None):
-    target = member or ctx.author
-    bal = get_bal(target.id)
-    await ctx.send(f"💳 Ví của **{target.display_name}**: `{bal:,}` xu")
-
-@bot.command(name="diemdanh", aliases=["daily"])
-async def daily_reward(ctx):
-    reward = random.randint(1000, 5000)
-    set_bal(ctx.author.id, reward)
-    await ctx.send(f"🎁 **{ctx.author.display_name}** đã điểm danh và nhận `{reward:,}` xu!")
-
-@bot.command(name="tx", aliases=["taixiu"])
-async def play_tx(ctx, choise: str, bet: int):
-    choise = choise.lower()
-    if choise not in ["tai", "tài", "xiu", "xỉu"] or bet <= 0 or bet > get_bal(ctx.author.id):
-        await ctx.send("❌ Đặt cược không hợp lệ hoặc không đủ xu!")
-        return
-
+# Lệnh kiểm tra thủ công (nếu cần)
+@bot.command()
+async def tx(ctx, choise: str):
     d1, d2, d3 = random.randint(1, 6), random.randint(1, 6), random.randint(1, 6)
     total = d1 + d2 + d3
     res = "tai" if total >= 11 else "xiu"
-    win = (choise in ["tai", "tài"] and res == "tai") or (choise in ["xiu", "xỉu"] and res == "xiu")
-
-    if win:
-        set_bal(ctx.author.id, bet)
-        await ctx.send(f"🎲 Kết quả: **{d1}-{d2}-{d3}** ({total} - {'TÀI' if res=='tai' else 'XỈU'})\n🎉 **{ctx.author.display_name}** THẮNG `+{bet:,}` xu!")
-    else:
-        set_bal(ctx.author.id, -bet)
-        await ctx.send(f"🎲 Kết quả: **{d1}-{d2}-{d3}** ({total} - {'TÀI' if res=='tai' else 'XỈU'})\n😭 **{ctx.author.display_name}** THUA `-{bet:,}` xu!")
-
-@bot.command(name="baucua", aliases=["bc"])
-async def play_bc(ctx, vat: str, bet: int):
-    ds = ["bầu", "cua", "tôm", "cá", "gà", "nai"]
-    vat = vat.lower()
-    if vat not in ds or bet <= 0 or bet > get_bal(ctx.author.id):
-        await ctx.send("❌ Con linh vật không hợp lệ hoặc không đủ xu!")
-        return
-
-    kq = [random.choice(ds) for _ in range(3)]
-    count = kq.count(vat)
-    if count > 0:
-        win = bet * count
-        set_bal(ctx.author.id, win)
-        await ctx.send(f"🎰 Mở bát: **{' - '.join(kq).upper()}**\n🎉 Trúng {count} con **{vat.upper()}**! Thắng `+{win:,}` xu!")
-    else:
-        set_bal(ctx.author.id, -bet)
-        await ctx.send(f"🎰 Mở bát: **{' - '.join(kq).upper()}**\n😭 Không có con **{vat.upper()}** nào! Mất `-{bet:,}` xu.")
-
-@bot.command(name="helpbot")
-async def show_help(ctx):
-    embed = discord.Embed(title="🤖 BOT TAIXIU - LỆNH", color=discord.Color.green())
-    embed.add_field(name="💰 Kinh tế", value="`!sodu`, `!diemdanh`", inline=False)
-    embed.add_field(name="🎲 Game", value="`!tx <tai/xiu> <tiền>`, `!bc <bầu/cua/tôm/cá/gà/nai> <tiền>`", inline=False)
-    await ctx.send(embed=embed)
+    await ctx.send(f"🎲 Kết quả: {d1}-{d2}-{d3} ({total}) -> {res.upper()}")
 
 # ==================== BẬT BOT ====================
-TOKEN = "MTM0MTMzMzI0MTU4NjQ1MDQ4Mw.G4E08T.X2S9E74_3v3XtbX.7Y33XI_w0k20d9SC9uzK9YnouQDJ0uUFy0NAFg"
+# ĐỪNG QUÊN THAY TOKEN MỚI VÀO ĐÂY
+TOKEN = "MTUzMTMzMzI0MTU4NjQ1MDQ4Mw.GH6om-.0SoocBsPayB-OMfJhnuXQeZkbZC1dmnhufTGWQ"
 bot.run(TOKEN)
-    
