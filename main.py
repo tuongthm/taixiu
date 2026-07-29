@@ -24,7 +24,7 @@ intents = discord.Intents.default()
 intents.message_content = True
 intents.members = True
 
-# Tắt lệnh help mặc định của discord.py để không bị đụng độ lỗi
+# XÓA HẲN LỆNH HELP MẶC ĐỊNH BẰNG help_command=None
 bot = commands.Bot(command_prefix="!", intents=intents, help_command=None)
 
 user_balances = {}
@@ -140,7 +140,7 @@ async def play_bc(ctx, vat: str, bet: int):
 
 # ==================== 6. BẢNG HƯỚNG DẪN LỆNH ====================
 
-@bot.command(name="helpbot", aliases=["help", "trogiup"])
+@bot.command(name="helpbot", aliases=["trogiup"])
 async def show_help(ctx):
     embed = discord.Embed(title="🤖 DANH SÁCH LỆNH BOT DISCORD", color=discord.Color.blue())
     embed.add_field(name="💰 Kinh tế & Tiền tệ", value="`!diemdanh` - Điểm danh nhận xu free mỗi ngày\n`!sodu` - Xem số dư tài khoản\n`!chuyentien @User <số_tiền>` - Chuyển xu cho người khác", inline=False)
@@ -149,5 +149,5 @@ async def show_help(ctx):
     await ctx.send(embed=embed)
 
 # ==================== 7. BẬT BOT ====================
-TOKEN = "MTM0MTMzMzI0MTU4NjQ1MDQ4Mw.GKDbNh.wuJzEE9sHa-4XRGGk5xGl05dCV3SWapRp2-FQA"
+TOKEN = "MTUzMTMzMzI0MTU4NjQ1MDQ4Mw.GWu8Zm.malh4eYL1rDsRY7R_FupZO1eEz9_L-yp0EPsCU"
 bot.run(TOKEN)
