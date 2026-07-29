@@ -14,7 +14,8 @@ def home():
     return "Bot Discord đang chạy 24/7!"
 
 def run_web():
-    app.run(host='0.0.0.0', port=8080)
+    port = int(os.environ.get("PORT", 8080))
+    app.run(host='0.0.0.0', port=port)
 
 def keep_alive():
     t = Thread(target=run_web)
@@ -102,5 +103,6 @@ async def show_help(ctx):
     await ctx.send(embed=embed)
 
 # ==================== BẬT BOT ====================
-TOKEN = "MTUzMTMzMzI0MTU4NjQ1MDQ4Mw.GCSKt5.5FFT1HtSkXEBWVFouZ9rXvc-29mRmEm1ILv2eM"
+TOKEN = "MTM0MTMzMzI0MTU4NjQ1MDQ4Mw.G4E08T.X2S9E74_3v3XtbX.7Y33XI_w0k20d9SC9uzK9YnouQDJ0uUFy0NAFg"
 bot.run(TOKEN)
+    
